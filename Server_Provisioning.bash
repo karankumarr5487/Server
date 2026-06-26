@@ -62,6 +62,27 @@ fi
 echo "${NEW_USER}:${NEW_USER_PASSWORD}" | chpasswd
 echo "root:${ROOT_PASSWORD}" | chpasswd
 
+
+###################################################
+# Grant netadmin sudo privileges
+###################################################
+if [ -f /etc/debian_version ]; then
+    if ! dpkg -s sudo >/dev/null 2>&1; then
+        apt-get update -y
+        apt-get install -y sudo
+    fi
+    usermod -aG sudo "${NEW_USER}"
+elif [ -f /etc/redhat-release ]; then
+    dnf install -y sudo >/dev/null 2>&1 || yum install -y sudo >/dev/null 2>&1 || true
+    usermod -aG wheel "${NEW_USER}"
+fi
+
+cat > /etc/sudoers.d/${NEW_USER} <<EOF
+${NEW_USER} ALL=(ALL) NOPASSWD: ALL
+EOF
+chmod 440 /etc/sudoers.d/${NEW_USER}
+visudo -cf /etc/sudoers.d/${NEW_USER}
+
 ###################################################
 # Configure SSH Port & Validate
 ###################################################
